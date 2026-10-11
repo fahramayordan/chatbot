@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batch-32 AI Assistant | Google Gemini Chatbot</title>
+  <meta name="description" content="AI Chatbot cerdas bertenaga Google Gemini API dan Express Node.js untuk asistensi coding, edukasi, dan konsultasi teknologi." />
+  
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <!-- FontAwesome Icons for clean UI -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Marked.js for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <!-- Highlight.js for Code Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- SIDEBAR / PARAMETERS PANEL -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div class="brand-info">
+            <h2>Gemini Bot</h2>
+            <span class="badge-sub">Batch-32 Project</span>
+          </div>
+        </div>
+        <button id="closeSidebarBtn" class="icon-btn mobile-only" title="Tutup Menu">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- PERSONA SELECTOR -->
+      <div class="sidebar-section">
+        <label class="section-label">
+          <i class="fa-solid fa-masks-theater"></i> Pilih Persona / Peran
+        </label>
+        <div class="persona-list" id="personaList">
+          <!-- Populated by JavaScript or defaults -->
+          <button class="persona-card active" data-persona="mentor">
+            <span class="persona-emoji">💻</span>
+            <div class="persona-details">
+              <strong>Tech & Code Mentor</strong>
+              <small>Solusi coding, debugging & review</small>
+            </div>
+          </button>
+          <button class="persona-card" data-persona="edubot">
+            <span class="persona-emoji">🎓</span>
+            <div class="persona-details">
+              <strong>EduBot (Tutor Belajar)</strong>
+              <small>Penjelasan konsep & analogi mudah</small>
+            </div>
+          </button>
+          <button class="persona-card" data-persona="casual">
+            <span class="persona-emoji">☕</span>
+            <div class="persona-details">
+              <strong>Teman Santai</strong>
+              <small>Diskusi santai, luwes & gaul</small>
+            </div>
+          </button>
+          <button class="persona-card" data-persona="career">
+            <span class="persona-emoji">🚀</span>
+            <div class="persona-details">
+              <strong>Career & Tech Coach</strong>
+              <small>Review CV, interview & portofolio</small>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- PARAMETERS / KREATIVITAS -->
+      <div class="sidebar-section">
+        <label class="section-label">
+          <i class="fa-solid fa-sliders"></i> Parameter Kreatif
+        </label>
+        
+        <div class="param-group">
+          <div class="param-header">
+            <span>Kreativitas (Temperature)</span>
+            <span class="param-val" id="tempValueDisplay">0.7</span>
+          </div>
+          <input type="range" id="tempSlider" min="0.0" max="1.0" step="0.1" value="0.7" class="slider" />
+          <div class="slider-marks">
+            <span>0.0 (Presisi)</span>
+            <span>0.7 (Seimbang)</span>
+            <span>1.0 (Kreatif)</span>
+          </div>
+        </div>
+
+        <div class="param-group">
+          <div class="accordion-header" id="customPromptToggle">
+            <span><i class="fa-solid fa-pen-nib"></i> Kustomisasi System Prompt</span>
+            <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+          </div>
+          <div class="accordion-content" id="customPromptContainer">
+            <textarea id="customPromptInput" placeholder="Tulis instruksi khusus untuk bot di sini..." rows="3"></textarea>
+            <button id="resetPromptBtn" class="btn-text-small">Kembalikan ke Default</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIONS & HISTORY -->
+      <div class="sidebar-section action-section">
+        <button id="clearChatBtn" class="btn-secondary full-width">
+          <i class="fa-solid fa-trash-can"></i> Bersihkan Obrolan
+        </button>
+        <button id="exportChatBtn" class="btn-secondary full-width">
+          <i class="fa-solid fa-download"></i> Simpan / Ekspor (.md)
+        </button>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="status-dot pulse" id="statusDot"></span>
+          <span id="statusText">Menghubungkan...</span>
+        </div>
+        <small class="tech-stack">Node.js • Express • Google Gemini API</small>
+      </div>
+    </aside>
+
+    <!-- MAIN CHAT AREA -->
+    <main class="chat-main">
+      
+      <!-- TOP NAVBAR -->
+      <header class="chat-header">
+        <div class="header-left">
+          <button id="openSidebarBtn" class="icon-btn mobile-only" title="Buka Pengaturan">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="current-persona-badge">
+            <span id="activePersonaEmoji">💻</span>
+            <div>
+              <h1 id="activePersonaName">Tech & Code Mentor</h1>
+              <span class="status-sub" id="modelBadge">Gemini AI Online</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="info-pill" title="Arsitektur Backend">
+            <i class="fa-brands fa-node-js"></i> Express 5
+          </div>
+          <div class="info-pill highlight" title="Model AI">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Gemini 2.5 Flash
+          </div>
+        </div>
+      </header>
+
+      <!-- CHAT MESSAGES CONTAINER -->
+      <section class="messages-container" id="messagesContainer">
+        
+        <!-- WELCOME HERO (Ditampilkan jika belum ada pesan) -->
+        <div class="welcome-hero" id="welcomeHero">
+          <div class="hero-icon-wrapper">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <h2>Halo! Ada yang bisa saya bantu hari ini?</h2>
+          <p>
+            Saya asisten cerdas berbasis <strong>Google Gemini API</strong> dan <strong>Node.js Express</strong>. 
+            Silakan ajukan pertanyaan seputar programming, sains, curhat santai, atau unggah gambar untuk dianalisis!
+          </p>
+
+          <div class="suggestions-grid">
+            <button class="suggestion-chip" data-prompt="Jelaskan konsep Asynchronous di JavaScript (Callback, Promise, Async/Await) dengan analogi mudah!">
+              <i class="fa-brands fa-js"></i>
+              <span>Konsep Async/Await di JavaScript</span>
+            </button>
+            <button class="suggestion-chip" data-prompt="Bagaimana cara membuat REST API dengan Express.js dan menghubungkannya ke Database?">
+              <i class="fa-solid fa-server"></i>
+              <span>Cara membuat REST API Express.js</span>
+            </button>
+            <button class="suggestion-chip" data-prompt="Berikan tips jitu untuk lulus interview teknis coding bagi Junior Web Developer.">
+              <i class="fa-solid fa-briefcase"></i>
+              <span>Tips lolos technical coding interview</span>
+            </button>
+            <button class="suggestion-chip" data-prompt="Rekomendasikan ide proyek portofolio Fullstack Web yang menarik untuk dilirik recruiter!">
+              <i class="fa-solid fa-lightbulb"></i>
+              <span>Ide proyek portofolio Fullstack</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Message Bubbles will be injected here -->
+      </section>
+
+      <!-- TYPING INDICATOR -->
+      <div class="typing-indicator-container" id="typingIndicator" style="display: none;">
+        <div class="typing-bubble">
+          <div class="bot-avatar-mini">
+            <i class="fa-solid fa-sparkles"></i>
+          </div>
+          <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="typing-label">Gemini sedang berpikir...</span>
+        </div>
+      </div>
+
+      <!-- INPUT BAR AT BOTTOM -->
+      <footer class="chat-input-area">
+        
+        <!-- ATTACHMENT PREVIEW TRAY -->
+        <div class="attachment-preview" id="attachmentPreview" style="display: none;">
+          <div class="preview-item">
+            <img id="previewImg" src="" alt="Lampiran" />
+            <span class="preview-filename" id="previewFilename">file.png</span>
+            <button id="removeAttachmentBtn" class="remove-btn" title="Hapus gambar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- FORM CONTAINER -->
+        <form class="chat-form" id="chatForm">
+          
+          <!-- Hidden file input for images -->
+          <input type="file" id="imageInput" accept="image/png, image/jpeg, image/webp, image/gif" style="display: none;" />
+
+          <button type="button" id="attachBtn" class="icon-btn tool-btn" title="Unggah Gambar / Screenshot (Multimodal)">
+            <i class="fa-solid fa-image"></i>
+          </button>
+
+          <div class="textarea-wrapper">
+            <textarea 
+              id="messageInput" 
+              placeholder="Ketik pesan Anda di sini... (Shift + Enter untuk baris baru)" 
+              rows="1"
+              maxlength="4000"
+            ></textarea>
+          </div>
+
+          <button type="submit" id="sendBtn" class="send-btn" title="Kirim Pesan">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+
+        <div class="input-hint">
+          <span>Tekan <strong>Enter</strong> untuk mengirim, <strong>Shift + Enter</strong> untuk baris baru.</span>
+          <span id="charCounter">0 / 4000</span>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- App Script -->
+  <script src="/js/app.js"></script>
+</body>
+</html>
